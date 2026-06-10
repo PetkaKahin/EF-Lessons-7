@@ -1,18 +1,37 @@
-COMPOSE_ENV=$(if $(wildcard docker/.env),--env-file docker/.env,)
-COMPOSE=docker compose $(COMPOSE_ENV)
+COMPOSE=docker compose
+APP_SERVICE=app
 
-.PHONY: init up uo down build restart ps logs app bash composer artisan migrate seed-test-data test
+.PHONY: init init-dev init-prod env-dev env-prod up up-dev up-prod uo down build build-dev build-prod restart ps logs app bash composer composer-prod artisan migrate seed-test-data test optimize clear
 
-init:
+init: init-dev
+
+init-dev: env-dev
 	$(COMPOSE) up -d --build
-	$(COMPOSE) exec php sh -lc "if [ -f .env.example ] && [ ! -f .env ]; then cp .env.example .env; fi"
-	$(COMPOSE) exec php sh -lc "if [ -f .env ]; then php docker/bin/configure-laravel-env.php .env; fi"
-	$(COMPOSE) exec php sh -lc "if [ -f composer.json ]; then composer install; fi"
-	$(COMPOSE) exec php sh -lc "if [ -f artisan ]; then php artisan key:generate --ansi; fi"
-	$(COMPOSE) exec php sh -lc "if [ -f artisan ]; then php artisan migrate --force; fi"
+	$(COMPOSE) exec $(APP_SERVICE) composer install
+	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize:clear
+	$(COMPOSE) exec $(APP_SERVICE) php artisan key:generate --ansi --force
+	$(COMPOSE) exec $(APP_SERVICE) php artisan migrate --force
+
+init-prod: env-prod
+	$(COMPOSE) up -d --build
+	$(COMPOSE) exec $(APP_SERVICE) composer install --no-dev --prefer-dist --optimize-autoloader
+	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize:clear
+	$(COMPOSE) exec $(APP_SERVICE) php artisan key:generate --ansi --force
+	$(COMPOSE) exec $(APP_SERVICE) php artisan migrate --force
+	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize
+
+env-dev:
+	cp .env.dev.example .env
+
+env-prod:
+	cp .env.prod.example .env
 
 up:
 	$(COMPOSE) up -d
+
+up-dev: env-dev up
+
+up-prod: env-prod up
 
 uo: up
 
@@ -21,6 +40,10 @@ down:
 
 build:
 	$(COMPOSE) build
+
+build-dev: env-dev build
+
+build-prod: env-prod build
 
 restart:
 	$(COMPOSE) restart
@@ -32,22 +55,31 @@ logs:
 	$(COMPOSE) logs -f
 
 app:
-	$(COMPOSE) exec php sh
+	$(COMPOSE) exec $(APP_SERVICE) sh
 
 bash:
-	$(COMPOSE) exec php bash
+	$(COMPOSE) exec $(APP_SERVICE) bash
 
 composer:
-	$(COMPOSE) exec php composer install
+	$(COMPOSE) exec $(APP_SERVICE) composer install
+
+composer-prod:
+	$(COMPOSE) exec $(APP_SERVICE) composer install --no-dev --prefer-dist --optimize-autoloader
 
 artisan:
-	$(COMPOSE) exec php php artisan
+	$(COMPOSE) exec $(APP_SERVICE) php artisan
 
 migrate:
-	$(COMPOSE) exec php php artisan migrate
+	$(COMPOSE) exec $(APP_SERVICE) php artisan migrate --force
 
 seed-test-data:
-	$(COMPOSE) exec php php artisan db:seed
+	$(COMPOSE) exec $(APP_SERVICE) php artisan db:seed
 
 test:
-	$(COMPOSE) exec php php artisan test
+	$(COMPOSE) exec $(APP_SERVICE) php artisan test
+
+optimize:
+	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize
+
+clear:
+	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize:clear
