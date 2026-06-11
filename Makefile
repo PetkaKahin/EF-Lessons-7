@@ -14,13 +14,14 @@ init: init-dev
 init-dev: env-dev
 	$(COMPOSE) up -d --build
 	$(COMPOSE) exec $(APP_SERVICE) composer install
-	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize:clear
 	$(COMPOSE) exec $(APP_SERVICE) php artisan key:generate --ansi --force
+	$(COMPOSE) exec $(APP_SERVICE) php artisan config:clear
 	$(COMPOSE) exec $(APP_SERVICE) php artisan migrate --force
 
 init-prod: env-prod
 	$(COMPOSE) up -d --build
 	$(COMPOSE) exec $(APP_SERVICE) php artisan key:generate --ansi --force
+	$(COMPOSE) exec $(APP_SERVICE) php artisan config:clear
 	$(COMPOSE) exec $(APP_SERVICE) php artisan migrate --force
 	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize:clear
 	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize
