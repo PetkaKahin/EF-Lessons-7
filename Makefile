@@ -1,6 +1,12 @@
 COMPOSE=docker compose
 APP_SERVICE=app
 
+ifeq ($(OS),Windows_NT)
+COPY_FILE=powershell -NoProfile -ExecutionPolicy Bypass -Command "Copy-Item -LiteralPath '$(1)' -Destination '$(2)' -Force"
+else
+COPY_FILE=cp "$(1)" "$(2)"
+endif
+
 .PHONY: init init-dev init-prod env-dev env-prod up up-dev up-prod uo down build build-dev build-prod restart ps logs app bash composer composer-prod artisan migrate seed-test-data test optimize clear
 
 init: init-dev
@@ -14,17 +20,16 @@ init-dev: env-dev
 
 init-prod: env-prod
 	$(COMPOSE) up -d --build
-	$(COMPOSE) exec $(APP_SERVICE) composer install --no-dev --prefer-dist --optimize-autoloader
-	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize:clear
 	$(COMPOSE) exec $(APP_SERVICE) php artisan key:generate --ansi --force
 	$(COMPOSE) exec $(APP_SERVICE) php artisan migrate --force
+	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize:clear
 	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize
 
 env-dev:
-	cp .env.dev.example .env
+	$(call COPY_FILE,.env.dev.example,.env)
 
 env-prod:
-	cp .env.prod.example .env
+	$(call COPY_FILE,.env.prod.example,.env)
 
 up:
 	$(COMPOSE) up -d
