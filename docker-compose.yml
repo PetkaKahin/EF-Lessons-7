@@ -15,24 +15,9 @@ services:
     user: "${UID:-1000}:${GID:-1000}"
     command: >
       sh -lc "mkdir -p storage/app/private storage/app/public storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs bootstrap/cache && /usr/local/sbin/php-fpm"
-    environment:
-      APP_ENV: "${APP_ENV:-local}"
-      APP_KEY: "${APP_KEY:-}"
-      APP_DEBUG: "${APP_DEBUG:-true}"
-      APP_URL: "${APP_URL:-http://localhost:8080}"
-      DB_CONNECTION: "${DB_CONNECTION:-pgsql}"
-      DB_HOST: "${DB_HOST:-db}"
-      DB_PORT: "${DB_PORT:-5432}"
-      DB_DATABASE: "${DB_DATABASE:-laravel}"
-      DB_USERNAME: "${DB_USERNAME:-laravel}"
-      DB_PASSWORD: "${DB_PASSWORD:?Set DB_PASSWORD in .env}"
-      CACHE_STORE: "${CACHE_STORE:-database}"
-      QUEUE_CONNECTION: "${QUEUE_CONNECTION:-database}"
-      SESSION_DRIVER: "${SESSION_DRIVER:-database}"
     volumes:
       - ./:/var/www/html
       - app_storage:/var/www/html/storage
-      - app_cache:/var/www/html/bootstrap/cache
       - ./docker/php/php.ini:/usr/local/etc/php/conf.d/99-laravel.ini:ro
     depends_on:
       db:
@@ -86,7 +71,6 @@ services:
 
 volumes:
   app_storage:
-  app_cache:
   db_data:
 
 networks:

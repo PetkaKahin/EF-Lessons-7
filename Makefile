@@ -7,7 +7,7 @@ else
 COPY_FILE=cp "$(1)" "$(2)"
 endif
 
-.PHONY: init init-dev init-prod env-dev env-prod up up-dev up-prod uo down build build-dev build-prod restart ps logs app bash composer composer-prod artisan migrate seed-test-data test optimize clear
+.PHONY: init init-dev init-prod env-dev env-prod up up-dev up-prod uo down build build-dev build-prod restart ps logs app bash composer composer-prod artisan migrate seed seed-test-data test lint optimize clear
 
 init: init-dev
 
@@ -78,11 +78,17 @@ artisan:
 migrate:
 	$(COMPOSE) exec $(APP_SERVICE) php artisan migrate --force
 
-seed-test-data:
+seed:
 	$(COMPOSE) exec $(APP_SERVICE) php artisan db:seed
 
+seed-test-data: seed
+
 test:
+	$(COMPOSE) exec $(APP_SERVICE) php artisan config:clear
 	$(COMPOSE) exec $(APP_SERVICE) php artisan test
+
+lint:
+	$(COMPOSE) exec $(APP_SERVICE) ./vendor/bin/pint --test
 
 optimize:
 	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize
