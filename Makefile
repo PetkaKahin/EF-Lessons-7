@@ -7,7 +7,7 @@ else
 COPY_FILE=cp "$(1)" "$(2)"
 endif
 
-.PHONY: init init-dev init-prod env-dev env-prod up up-dev up-prod uo down build build-dev build-prod restart ps logs app bash composer composer-prod artisan migrate seed seed-test-data test lint optimize clear
+.PHONY: init init-dev init-prod env-dev env-prod up up-dev up-prod uo down build build-dev build-prod restart ps logs app bash composer composer-prod artisan migrate seed seed-test-data test lint analyse optimize clear
 
 init: init-dev
 
@@ -89,6 +89,9 @@ test:
 
 lint:
 	$(COMPOSE) exec $(APP_SERVICE) ./vendor/bin/pint --test
+
+analyse:
+	$(COMPOSE) exec $(APP_SERVICE) ./vendor/bin/phpstan analyse
 
 optimize:
 	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize

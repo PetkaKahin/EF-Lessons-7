@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\Domain\Task\Enums\TaskStatus;
+use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin Task
+ */
 class TaskResource extends JsonResource
 {
     /**
@@ -22,7 +25,7 @@ class TaskResource extends JsonResource
             'user_id' => $this->user_id,
             'title' => $this->title,
             'description' => $this->description,
-            'status' => $this->status instanceof TaskStatus ? $this->status->value : $this->status,
+            'status' => $this->status->value,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

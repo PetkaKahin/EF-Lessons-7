@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  PHP_VERSION: &php_version '8.5'
+  POSTGRES_IMAGE: &postgres_image postgres:17-alpine
+  APP_ENV: testing
+  APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+  BCRYPT_ROUNDS: 4
+  CACHE_STORE: array
+  DB_CONNECTION: pgsql
+  DB_HOST: 127.0.0.1
+  DB_PORT: 5432
+  DB_DATABASE: &db_database ef_lessons_7_test
+  DB_USERNAME: &db_username ef_lessons_7
+  DB_PASSWORD: &db_password local_db_password
+  DB_SSLMODE: disable
+  MAIL_MAILER: array
+  QUEUE_CONNECTION: sync
+  SESSION_DRIVER: array
+
+jobs:
+  lint_and_static:
+    name: Lint & Static Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - &checkout
+        name: Checkout
+        uses: actions/checkout@v6
+
+      - &setup_php
+        name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: *php_version
+          extensions: pdo_pgsql, pgsql
+          coverage: none
+
+      - &install_php_dependencies
+        name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Check formatting
+        run: ./vendor/bin/pint --test
+
+      - name: Static analysis
+        run: ./vendor/bin/phpstan analyse
+
+  tests:
+    name: Tests
+    needs: lint_and_static
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: *postgres_image
+        env:
+          POSTGRES_DB: *db_database
+          POSTGRES_USER: *db_username
+          POSTGRES_PASSWORD: *db_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    steps:
+      - *checkout
+      - *setup_php
+      - *install_php_dependencies
+
+      - name: Clear config
+        run: php artisan config:clear
+
+      - name: Run migrations
+        run: php artisan migrate --force
+
+      - name: Run tests
+        run: php artisan test
+
+  build:
+    name: Build Docker Image
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - *checkout
+
+      - name: Build Docker image
+        run: docker build --target prod -t ef-lessons-7:${{ github.sha }} -f docker/php/Dockerfile .
+
+      - name: Save Docker image
+        run: docker save ef-lessons-7:${{ github.sha }} -o ef-lessons-7-image.tar
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ef-lessons-7-image
+          path: ef-lessons-7-image.tar
+          retention-days: 7
