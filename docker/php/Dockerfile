@@ -67,9 +67,11 @@ RUN composer dump-autoload \
     --no-scripts \
     && chown -R laravel:laravel /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Только PHP-рантайм + готовый код из build, без composer и мусора из build
+# PHP-рантайм + готовый код из build
+# Composer нужен для деплоя через docker-compose.yml
 FROM base AS prod
 
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY --from=build --chown=laravel:laravel /var/www/html /var/www/html
 
 CMD ["/usr/local/sbin/php-fpm"]
