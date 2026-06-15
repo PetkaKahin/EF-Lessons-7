@@ -7,6 +7,7 @@ use App\Http\Middleware\RequestIdMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -19,6 +20,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(RequestIdMiddleware::class);
         $middleware->append(RecordMetricsMiddleware::class);
+        $middleware->throttleApi('api');
+
+        // Гость на api/* не должен редиректиться на несуществующий маршрут login — иначе вместо 401 будет 500
+        $middleware->redirectGuestsTo(
+            static fn (Request $request): ?string => $request->is('api/*') ? null : route('login')
+        );
 
         $middleware->api(
             append: [
@@ -33,6 +40,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // API всегда отвечает JSON, иначе auth-исключение пытается редиректить на маршрут login и падает в 500
+        $exceptions->shouldRenderJsonWhen(
+            static fn (Request $request, Throwable $e): bool => $request->is('api/*') || $request->expectsJson()
+        );
+
         $exceptions->map(
             DomainValidationException::class,
             fn (DomainValidationException $exception): ValidationException => ValidationException::withMessages($exception->errors())
