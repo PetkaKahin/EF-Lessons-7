@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 class RequestIdMiddleware
@@ -19,15 +20,21 @@ class RequestIdMiddleware
     {
         $requestId = trim((string) $request->headers->get('X-Request-Id'));
 
+        if (strlen($requestId) > 255) {
+            throw ValidationException::withMessages([
+                'X-Request-Id' => 'The X-Request-Id cannot be longer than 255 characters',
+            ]);
+        }
+
         if ($requestId === '') {
             $requestId = (string) Str::uuid();
         }
 
         $request->headers->set('X-Request-Id', $requestId);
-        $request->attributes->set('requestId', $requestId);
+        $request->attributes->set('request_id', $requestId);
 
         Log::shareContext([
-            'requestId' => $requestId,
+            'request_id' => $requestId,
         ]);
 
         $response = $next($request);

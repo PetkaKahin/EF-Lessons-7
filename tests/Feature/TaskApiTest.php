@@ -184,7 +184,7 @@ it('reuses incoming request id header', function (): void {
     Log::shouldHaveReceived('shareContext')
         ->once()
         ->with([
-            'requestId' => 'lesson-request-id',
+            'request_id' => 'lesson-request-id',
         ]);
 });
 

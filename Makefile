@@ -29,7 +29,7 @@ init-prod: env-prod
 	$(COMPOSE) exec $(APP_SERVICE) php artisan optimize
 
 env-dev:
-	$(call COPY_FILE,.env.dev.example,.env)
+	$(call COPY_FILE,.env.example,.env)
 
 env-prod:
 	$(call COPY_FILE,.env.prod.example,.env)

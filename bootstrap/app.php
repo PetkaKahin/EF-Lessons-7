@@ -2,6 +2,7 @@
 
 use App\Domain\Shared\Exceptions\DomainValidationException;
 use App\Http\Middleware\AppTimeMiddleware;
+use App\Http\Middleware\RecordMetricsMiddleware;
 use App\Http\Middleware\RequestIdMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,17 +17,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->prepend(RequestIdMiddleware::class);
+        $middleware->append(RecordMetricsMiddleware::class);
+
         $middleware->api(
             append: [
                 AppTimeMiddleware::class,
-            ],
-            prepend: [
-                RequestIdMiddleware::class,
             ],
         );
 
         $middleware->alias([
             'appTime' => AppTimeMiddleware::class,
+            'metrics' => RecordMetricsMiddleware::class,
             'requestId' => RequestIdMiddleware::class,
         ]);
     })

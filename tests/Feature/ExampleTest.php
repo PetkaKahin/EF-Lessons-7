@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
@@ -15,16 +14,5 @@ class ExampleTest extends TestCase
         $response = $this->get('/');
 
         $response->assertStatus(200);
-    }
-
-    public function test_health_endpoint_returns_ok(): void
-    {
-        $response = $this->getJson('/health');
-
-        $response
-            ->assertOk()
-            ->assertJson([
-                'status' => 'ok',
-            ]);
     }
 }

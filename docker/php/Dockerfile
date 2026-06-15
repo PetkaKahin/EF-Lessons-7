@@ -26,6 +26,8 @@ RUN groupadd --gid ${GID} laravel \
 
 WORKDIR /var/www/html
 
+COPY docker/php/php.ini /usr/local/etc/php/php.ini
+
 RUN mkdir -p \
         storage/app/private \
         storage/app/public \
@@ -67,7 +69,6 @@ RUN composer dump-autoload \
     --no-scripts \
     && chown -R laravel:laravel /var/www/html/storage /var/www/html/bootstrap/cache
 
-# PHP-рантайм + готовый код из build
 # Composer нужен для деплоя через docker-compose.yml
 FROM base AS prod
 
