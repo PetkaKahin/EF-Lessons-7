@@ -78,6 +78,12 @@ it('requires authentication for task endpoints', function (): void {
         ->assertUnauthorized();
 });
 
+it('returns 401 for guests regardless of the accept header', function (): void {
+    $this->get('/api/tasks', ['Accept' => '*/*'])
+        ->assertUnauthorized()
+        ->assertJson(['message' => 'Unauthenticated.']);
+});
+
 it('can revoke the current sanctum token', function (): void {
     $user = User::factory()->create();
     $token = apiTokenFor($user);

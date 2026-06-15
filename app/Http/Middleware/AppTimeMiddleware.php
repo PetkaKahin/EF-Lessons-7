@@ -15,10 +15,11 @@ class AppTimeMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $startedAt = microtime(true);
+
         $response = $next($request);
 
-        $startTime = LARAVEL_START;
-        $durationMs = (microtime(true) - $startTime) * 1000;
+        $durationMs = (microtime(true) - $startedAt) * 1000;
 
         $response->headers->set('X-App-Time', number_format($durationMs, 1, '.', '').' ms');
 
